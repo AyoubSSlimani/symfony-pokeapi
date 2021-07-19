@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiResource;
 use App\Repository\PokemonRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -14,7 +16,7 @@ class Pokemon
 {
     /**
      * @ORM\Id
-     * @ORM\GeneratedValue
+     * @ORM\GeneratedValue(strategy="NONE")
      * @ORM\Column(type="integer")
      */
     private $id;
@@ -23,11 +25,6 @@ class Pokemon
      * @ORM\Column(type="string", length=255)
      */
     private $name;
-
-    /**
-     * @ORM\Column(type="integer")
-     */
-    private $PokeapiId;
 
     /**
      * @ORM\Column(type="integer")
@@ -47,7 +44,24 @@ class Pokemon
     /**
      * @ORM\Column(type="integer")
      */
-    private $nbOrder;
+    private $pokedexOrder;
+
+    /**
+     * @ORM\ManyToMany(targetEntity=Type::class, inversedBy="pokemons")
+     */
+    private $types;
+
+    /**
+     * @ORM\OneToMany(targetEntity=PokemonAttack::class, mappedBy="pokemon", orphanRemoval=true)
+     */
+    private $attacks;
+
+    public function __construct(int $id)
+    {
+        $this->id = $id;
+        $this->types = new ArrayCollection();
+        $this->attacks = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -62,18 +76,6 @@ class Pokemon
     public function setName(string $name): self
     {
         $this->name = $name;
-
-        return $this;
-    }
-
-    public function getPokeapiId(): ?int
-    {
-        return $this->PokeapiId;
-    }
-
-    public function setPokeapiId(int $PokeapiId): self
-    {
-        $this->PokeapiId = $PokeapiId;
 
         return $this;
     }
@@ -114,14 +116,68 @@ class Pokemon
         return $this;
     }
 
-    public function getNbOrder(): ?int
+    public function getPokedexOrder(): ?int
     {
-        return $this->nbOrder;
+        return $this->pokedexOrder;
     }
 
-    public function setNbOrder(int $nbOrder): self
+    public function setPokedexOrder(int $pokedexOrder): self
     {
-        $this->nbOrder = $nbOrder;
+        $this->pokedexOrder = $pokedexOrder;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Type[]
+     */
+    public function getTypes(): Collection
+    {
+        return $this->types;
+    }
+
+    public function addType(Type $type): self
+    {
+        if (!$this->types->contains($type)) {
+            $this->types[] = $type;
+        }
+
+        return $this;
+    }
+
+    public function removeType(Type $type): self
+    {
+        $this->types->removeElement($type);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|PokemonAttack[]
+     */
+    public function getAttacks(): Collection
+    {
+        return $this->attacks;
+    }
+
+    public function addAttack(PokemonAttack $attack): self
+    {
+        if (!$this->attacks->contains($attack)) {
+            $this->attacks[] = $attack;
+            $attack->setPokemon($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAttack(PokemonAttack $attack): self
+    {
+        if ($this->attacks->removeElement($attack)) {
+            // set the owning side to null (unless already changed)
+            if ($attack->getPokemon() === $this) {
+                $attack->setPokemon(null);
+            }
+        }
 
         return $this;
     }
